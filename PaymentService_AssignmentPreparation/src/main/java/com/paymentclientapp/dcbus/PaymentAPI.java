@@ -37,8 +37,49 @@ public class PaymentAPI extends HttpServlet {
 		JsonObject responseJson = generatePaymentTable(paymentObj.readPayments(null));
 		response.getWriter().append(responseJson.toString());		
 	}
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		JsonObject responseJson = null;
 
-	
+		try {
+			String consumer_id = request.getParameter("consid").toString();
+			String product_id = request.getParameter("prodid").toString();
+			float payment_amount = Float.parseFloat(request.getParameter("payamount").toString());
+			String creditcard_no = request.getParameter("ccnumber").toString();
+			String card_type = request.getParameter("cctype").toString();
+
+			//test parameters
+			System.out.println("PARAMS: cid="+consumer_id +" pid="+ product_id +" amt="+ payment_amount+" cc="+creditcard_no+" cct="+card_type);
+
+			JsonObject insertResponseJson = paymentObj.insertPayment(consumer_id, product_id, payment_amount, creditcard_no, card_type);
+
+			//test response
+			System.out.println("RESPONSE: " + insertResponseJson.toString());
+
+			if (! insertResponseJson.get("STATUS").getAsString().equalsIgnoreCase("SUCCESSFUL")) {
+				responseJson = new JsonObject();
+				responseJson.addProperty("status", "error");
+				responseJson.addProperty("data", "Error occurred while inserting the new payment");
+				response.getWriter().append(responseJson.toString());
+				return;
+			}
+
+			JsonObject tableJson = generatePaymentTable(paymentObj.readPayments(null));
+			responseJson = new JsonObject();
+			responseJson.addProperty("status", "success");
+			responseJson.addProperty("data", tableJson.get("payments").getAsString());
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			responseJson = new JsonObject();
+			responseJson.addProperty("status", "error");
+			responseJson.addProperty("data", "Exception occurred while inserting the payment.");
+		}
+		response.getWriter().append(responseJson.toString());
+	}
+
 	private JsonObject generatePaymentTable(JsonObject paymentsJson) {
 		//generating payments table
 		JsonObject responseJson;		
@@ -88,5 +129,5 @@ public class PaymentAPI extends HttpServlet {
 		return responseJson;
 	}
 
-	
+
 }
