@@ -82,7 +82,7 @@ public class PaymentAPI extends HttpServlet {
 		}
 		response.getWriter().append(responseJson.toString());
 	}
-	
+
 	/**
 	 * @see HttpServlet#doPut(HttpServletRequest, HttpServletResponse)
 	 */
@@ -97,10 +97,10 @@ public class PaymentAPI extends HttpServlet {
 			float payment_amount = Float.parseFloat(parameterMap.get("payamount").toString());
 			String creditcard_no = parameterMap.get("ccnumber").toString();
 			String card_type = parameterMap.get("cctype").toString();
-			
+
 			//test parameters
 			System.out.println("PARAMS: pay="+payment_id+" cid="+consumer_id +" pid="+ product_id +" amt="+ payment_amount+" cc="+creditcard_no+" cct="+card_type);
-			
+
 			JsonObject updateResponseJson = paymentObj.updatePayment(payment_id, consumer_id, product_id, payment_amount, creditcard_no, card_type);
 
 			if (! updateResponseJson.get("STATUS").getAsString().equalsIgnoreCase("SUCCESSFUL")) {
@@ -125,6 +125,47 @@ public class PaymentAPI extends HttpServlet {
 		response.getWriter().append(responseJson.toString());
 	}
 
+	/**
+	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
+	 */
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		JsonObject responseJson = null;
+
+		try {
+			Map<String, String> parameterMap = getParameterMap(request);
+			String payment_id = parameterMap.get("paymentid").toString();
+
+			//test parameters
+			System.out.println("PARAMS: pay="+payment_id);
+
+			JsonObject deleteResponseJson = paymentObj.deletePayment(null, payment_id);
+
+			//test response
+			System.out.println("RESPONSE: " + deleteResponseJson.toString());
+
+			if (! deleteResponseJson.get("STATUS").getAsString().equalsIgnoreCase("SUCCESSFUL")) {
+				responseJson = new JsonObject();
+				responseJson.addProperty("status", "error");
+				responseJson.addProperty("data", "Error occurred while deleting the payment with payment id: " + payment_id);
+				response.getWriter().append(responseJson.toString());
+				return;
+			}
+
+			JsonObject tableJson = generatePaymentTable(paymentObj.readPayments(null));
+			responseJson = new JsonObject();
+			responseJson.addProperty("status", "success");
+			responseJson.addProperty("data", tableJson.get("payments").getAsString());
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			responseJson = new JsonObject();
+			responseJson.addProperty("status", "error");
+			responseJson.addProperty("data", "Exception occurred while deleting the payment.");
+		}
+		//test output
+		System.out.println("OUTPUT: " + responseJson.toString());
+		response.getWriter().append(responseJson.toString());
+	}
 
 
 	private JsonObject generatePaymentTable(JsonObject paymentsJson) {
@@ -175,32 +216,32 @@ public class PaymentAPI extends HttpServlet {
 
 		return responseJson;
 	}
-	
-	// Convert request parameters to a Map
-		private static Map<String,String> getParameterMap(HttpServletRequest request)
-		{
-			Map<String, String> map = new HashMap<String, String>();
-			try
-			{
-				Scanner scanner = new Scanner(request.getInputStream(), "UTF-8");
-				String queryString = scanner.hasNext() ?
-						scanner.useDelimiter("\\A").next() : "";
-				scanner.close();
-				String[] params = queryString.split("&");
-				for (String param : params)
-				{
-					String[] p = param.split("=");
 
-					//decoding the string before putting into the map to avoid undesired strings
-					map.put(p[0], java.net.URLDecoder.decode(p[1], StandardCharsets.UTF_8.name()));
-				}
-			}
-			catch (Exception e)
+	// Convert request parameters to a Map
+	private static Map<String,String> getParameterMap(HttpServletRequest request)
+	{
+		Map<String, String> map = new HashMap<String, String>();
+		try
+		{
+			Scanner scanner = new Scanner(request.getInputStream(), "UTF-8");
+			String queryString = scanner.hasNext() ?
+					scanner.useDelimiter("\\A").next() : "";
+			scanner.close();
+			String[] params = queryString.split("&");
+			for (String param : params)
 			{
-				e.printStackTrace();
+				String[] p = param.split("=");
+
+				//decoding the string before putting into the map to avoid undesired strings
+				map.put(p[0], java.net.URLDecoder.decode(p[1], StandardCharsets.UTF_8.name()));
 			}
-			return map;
 		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return map;
+	}
 
 
 }
