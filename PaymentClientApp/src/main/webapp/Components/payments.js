@@ -8,7 +8,7 @@ $(document).ready(function () {
 });
 
 // CLIENT COMPONENTS
-// CLIENT CONNECTOR
+// CLIENT CONTROLLER
 function loadPayments() {
 	$.ajax(
         {
